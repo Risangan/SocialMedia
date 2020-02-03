@@ -1,0 +1,63 @@
+{% extends "matchingsite/base.html" %}
+
+{% load staticfiles %}
+
+{% block content %}
+   <div class='main'>
+       {% if loggedin %}
+           You are now logged in.
+           Please <a href="{% url 'profile'%}">click here</a> to continue.
+           <br><br>
+       {% else %}
+           <h2> Enter your details to login</h2>
+		   
+           <form id="login" method='POST' action="{% url 'login' %}" onsubmit="return validate()">
+           	{% csrf_token %}
+               <span class='field'>Username</span>
+			   <br>
+               <input type='text' maxlength='16' id='logusername' name='username'>
+               <br>
+			   <span id='info'></span>
+               <br>
+               <span class='field'>Password</span>
+			   <br>
+               <input type='password' maxlength='16' name='password'><br>
+               <br>
+               <input type='submit' value='Login'>
+			   
+           </form>
+           <script type="text/javascript">
+                function validate(){
+                    var username = document.getElementById('logusername');
+                    var password = document.getElementById('password');
+                    
+                    if(username.value == ""){
+                        window.alert("Username has not been entered");
+                        username.focus();
+                        return false;
+                    }
+                    
+                    if(username.value.length < 4){
+                        window.alert("Username is atleast 4 characters long");
+                        username.focus();
+                        return false;
+                    }
+                    
+                    if(username.value == ""){
+                        window.alert("Password has not been entered");
+                        username.focus();
+                        return false;
+                    }
+                    
+                    if(password.value.length < 4){
+                        window.alert("Password is atleast 4 characters long");
+                        password.focus();
+                        return false;
+                    }
+                    
+                    return true;
+                }
+           </script>
+       {% endif %}
+   </div>
+{% endblock %}

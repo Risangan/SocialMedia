@@ -1,0 +1,32 @@
+{% extends "matchingsite/base.html" %}
+{% load static %}
+
+{% block content %}
+   <div class='main'>
+   <table>
+   <tr>     
+      <td>
+         <p>Set your profile picture here</p>
+         {% if image %}
+         <img id='profile-img' height=150 width=150 src='{{ image }}'></img>
+         {% else %}
+         <img id='profile-img' height=150 src="{% static 'matchingsite/profile-image.jpg' %}"></img>
+         {% endif %}
+         <br>
+         <progress id="progressBar" value="0" max="100" style="width:150px;display:none;">
+         </progress>
+      </td>
+   </tr>
+   </table>
+   <br>
+   <form id='upload_form' method='POST' action="{% url 'updatePic' %}" enctype='multipart/form-data'>
+    {% csrf_token %}
+    <br>
+    <input type="file" id="img_file">
+    <br>
+    <br>
+    <input type='submit' value='Save'>
+   </form>
+   <br>
+   </div>
+{% endblock %}

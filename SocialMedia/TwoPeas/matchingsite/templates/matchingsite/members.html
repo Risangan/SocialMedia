@@ -1,0 +1,236 @@
+{% extends "matchingsite/base.html" %}
+{% load static %}
+
+{% block content %}
+   <style>
+      table {
+         width:100%;
+      }
+
+      th, td {
+         padding: 15px;
+      }
+
+      th, td {
+         border: 1px solid black;
+         border-collapse: collapse;
+      }
+   </style>
+   <div class='main'>
+      <h4>All Peas</h4>
+      <br>
+      <!-- Here, we store the hobbies associated with the logged in user. This is so we can later compare hobbies with another user  -->
+      <script>
+         var userHobbiesList = [];      
+      </script>
+      {% for y in userHobbiesList %}
+         <script>
+            userHobbiesList.push("{{ y }}");
+         </script>
+      {% endfor %}
+
+      <!-- This table will list all members, except logged-in user  -->
+      <table>
+         <tr>
+            <th>Profile Picture</th>
+            <th>Username</th>
+            <th>Date of Birth</th>
+            <th>Gender</th>
+            <th>Like</th>
+         </tr>
+         
+            <!-- adapted from 'socialnetwork' app for the 'like' table data -->
+            <!-- Loop through all the profiles  -->
+            {% for member in allProfiles %}
+               <tr>
+                  <td><img height=150 width=150 src='{{ member.profileImage.url }}'></img></td>
+                  <td><strong>{{ member.username }}</strong></td>
+                  <td>{{ member.dateOfBirth }}</td>
+                  <td>{{ member.gender }}</td>
+                  <td>
+                     <!-- if member of this iteration is in logged-in user's 'like' list -->
+                     {% if member in likes %}
+                        <strong>Liked</strong> - Email notification sent! </td>
+                     {% else %}
+                        <!-- add information to the end of URL, which processes information in the back-end -->
+                        <a href="?add={{ member.username }}">LIKE</a> </td>         
+                     {% endif %}
+               </tr>
+            {% endfor %}
+         
+      </table>   
+      <br>
+      <br>
+      <h4>Similar Peas to you in descending order</h4>
+      <!-- This DIV will have a list of all users and their similarity rating to you, starting with the highest similarities -->
+      <div id="commonList">
+      </div>
+      <br>
+      <br>
+
+      <!-- Loop through all logged-in user's hobbies -->
+      {% for x in userHobbies %} 
+         <h4 id="{{ x }}">Peas who also like <strong>{{ x }}</strong></h4>
+         <!-- Create a form for each hobby. When user presses SHOW, reveal all users who ALSO like that hobby -->
+         <form id="{{ x }}form">
+               {% csrf_token %}
+               <input type='submit' value='Show'>
+         </form>
+         <table id="{{ x }}table">
+         </table>
+         <br>
+      {% endfor %}   
+   </div>
+   
+   <script>   
+      //=======================================================================================================================
+                        //GET Request - ALL MEMBERS except logged in user (Abandoned)
+      //=======================================================================================================================
+      $(function (){
+         var $memberList = $('#memberList'); //Fetch ID of Table
+         $.ajax({
+            type: 'GET',
+            url: '/userswithoutlogged',
+            success: function(data){
+               $.each(data, function(i, item){
+                  getHobbyData(data[i].username);  
+               });
+            },
+            error: function(){
+               console.log("error");
+            }
+         });
+      });
+      //=======================================================================================================================
+                        //GET Request - Hobby data for specified username!
+      //=======================================================================================================================
+      function getHobbyData(username){
+         var $commonList = $('#commonList'); //Fetch ID of Table
+         console.log(username);
+         $(function (){
+            var data = {
+               csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+               username: username
+            }  
+            $.ajax({
+               type: 'GET',
+               url: '/loadhobbies',
+               data: data,
+               success: function(data){
+                  hobbies = [];
+                  $.each(data, function(i, item){
+                     console.log("ID" + i + ":" + item.hobbyName);
+                     hobbies[i] = item.hobbyName;
+                  });
+                  //Now that we have the array for the specified username, time to calculate similarity rating with logged in user
+                  var similarHobbies = compareArrays(userHobbiesList, hobbies);
+                  //Remove any numbers from specified username, so DIV ID's numbers only come from similarity rating
+                  var usernameNoNumbers = username.replace(/[0-9]/g, '');
+                  $commonList.append('<div id="' + similarHobbies.length + usernameNoNumbers + 'div"></div>');
+                  var $newDiv = $('#' + similarHobbies.length + usernameNoNumbers + 'div'); //Fetch ID of New Div
+                  $newDiv.append('<p>You have <strong>(' + similarHobbies.length + ')</strong> hobbies in common with <strong>' + username + '</strong>, they are:</p>');
+                  $newDiv.append('<ul>');
+                  for(var i = 0; i < similarHobbies.length; i++){
+                     $newDiv.append('<li>' + similarHobbies[i] + '</li>');
+                  }
+                  $newDiv.append('</ul>');
+                  $newDiv.append('<br>');
+                  $newDiv.append('<hr>');
+
+                  //Time to sort in descending order
+                  var main = document.getElementById('commonList'); //Get ID of container DIV
+                  [].map.call( main.children, Object ).sort( function ( a, b ) {
+                     return +b.id.match( /\d+/ ) - +a.id.match( /\d+/ );
+                  }).forEach( function ( elem ) {
+                     main.appendChild( elem );
+                  });
+               },
+               error: function(){
+                  console.log("error with getHobbyData");
+               }
+            });
+         });
+      }
+      //=======================================================================================================================
+                        //Get Form ID of form that mouse is hovering
+      //=======================================================================================================================  
+      var currentHoveredForm;  
+      var selectedHobby;
+      $(document).ready(function(){
+         $("form").hover(function(){
+            currentHoveredForm = this.id;
+            selectedHobby = currentHoveredForm.replace("form", "");
+            currentHoveredForm = '#' + currentHoveredForm;
+         });
+      });
+      //=======================================================================================================================
+                        //POST Request - SIMILAR HOBBY MEMBERS
+      //=======================================================================================================================
+      $(document).on('submit', currentHoveredForm, function(e) {
+         e.preventDefault(); //Prevents reloading page   
+         var tableID = '#' + selectedHobby + 'table';
+         console.log(tableID);
+         var $tableList = $(tableID); //Store ID of Table
+         $tableList.append('<tr id="header' + selectedHobby + '"></tr');
+         var $headerRow = $('#header' + selectedHobby); //Fetch ID of New Row
+         $headerRow.append('<th>Profile Picture</th>');
+         $headerRow.append('<th>Username</th>');
+         $headerRow.append('<th>Date of Birth</th>');
+         $headerRow.append('<th>Gender</th>');
+         $headerRow.append('<th>Age</th>');
+         var data = {
+            csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+            hobbies: selectedHobby
+         } 
+         console.log($tableList);
+         $.ajax({
+            type: 'POST',
+            data: data,
+            url: '/similarusers/',
+            success: function(data){
+               $.each(data, function(i, item){
+                  console.log("Success!");
+                  console.log("data: " + data);
+                  $tableList.append('<tr id="' + data[i].username + selectedHobby + '"></tr');
+                  var $newRow = $('#' + data[i].username + selectedHobby); //Fetch ID of New Row
+                  $newRow.append('<td><img height=150 width=150 src=' + data[i].profileImage + '></img></td>');
+                  $newRow.append('<td>' + data[i].username + '</td>');
+                  $newRow.append('<td>' + data[i].dateOfBirth + '</td>');  
+                  $newRow.append('<td>' + data[i].gender + '</td>');     
+                  $newRow.append('<td>' + getAge(data[i].dateOfBirth) + '</td>');                          
+               });   
+            },
+            error: function(jqxhr, status, exception) {
+                     alert('Exception:', exception);
+            }
+         });
+      });
+      
+      //Calculates Age based on Date of Birth
+      function getAge(DOB) {
+         var today = new Date();
+         var birthDate = new Date(DOB);
+         var age = today.getFullYear() - birthDate.getFullYear();
+         var m = today.getMonth() - birthDate.getMonth();
+         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age = age - 1;
+         }
+         return age;
+      }     
+
+      //Takes in 2 arrays and checks if any of them have 2 of the same value
+      //userArray = logged in user's hobbies
+      //specifiedArray = hobbies of specified username
+      function compareArrays(userArray, specifiedArray){
+         var similarHobbies = [];
+         for(var i = 0; i < userArray.length; i++){
+            for(var j = 0; j < specifiedArray.length; j++){
+               if(userArray[i] == specifiedArray[j]){
+                  similarHobbies.push(userArray[i]);
+               }
+            }            
+         }
+         return similarHobbies;
+      }
+   </script>
+{% endblock %}

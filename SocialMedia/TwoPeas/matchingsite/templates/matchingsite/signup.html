@@ -1,0 +1,85 @@
+{% extends "matchingsite/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+   <div class='main'>
+      <h2>Enter your details to sign up</h2>
+      <form id='signup' method='POST' action="{% url 'register' %}" onsubmit="return validate()">
+      	{% csrf_token %}
+		<div class="form-group">
+         <span class='fieldname'>Username</span>
+		 <br>
+         <input type='text' maxlength='16' id='regusername' name='username' required>
+		 </div>
+		 
+         <span id='info'></span>
+         <br>
+		 <div class="form-group">
+         <span class='fieldname'>Password</span>
+		 <br>
+         <input type='password' maxlength='16' name='password' required>
+         </div>
+         <br>
+		 <div class="form-group">
+         <span class='fieldname'>Email</span>
+		 <br>
+         <input type="email" maxlength='40' name="emailaddress" required>
+         </div>
+		 <br>
+		 <div class="form-group">
+         <span class='fieldname'>Gender</span>
+		 <br>
+         <input type="radio" name="gender" value="M" checked> Male<br>
+         <input type="radio" name="gender" value="F"> Female<br>
+         </div>
+		 <div class="form-group">
+         <span class='fieldname'>Date of Birth</span>
+         <br>
+         <input type="date" id="start" name="dob" value="1996-01-01" required>
+         <div>
+		 <br>
+         <br>
+         <span class='fieldname'>&nbsp;</span>
+         <input type='submit' value='Sign up'>
+      </form>
+           <script type="text/javascript">
+                function validate(){
+                    var username = document.getElementById('regusername');
+                    var password = document.getElementById('password');
+                    var email = document.getElementById('emailaddress');
+                    
+                    if(username.value==""){
+                        window.alert("Username must be entered to complete signup")
+                        username.focus();
+                        return false;
+                    }
+                    
+                    if(username.value.length<4){
+                        window.alert("Username must be atleast 4 characters long")
+                        username.focus();
+                        return false;
+                    }
+                    
+                    if(password.value==""){
+                        window.alert("Password must be entered to complete signup")
+                        password.focus();
+                        return false;
+                    }
+                    
+                    if(password.value.length<4){
+                        window.alert("Password must be atleast 4 characters long")
+                        password.focus();
+                        return false;
+                    }
+                    
+                    if(email.value==""){
+                        window.alert("Email must be entered to complete signup")
+                        email.focus();
+                        return false;
+                    }
+                    
+                    return true;
+                }
+           </script>
+   </div>
+{% endblock %}

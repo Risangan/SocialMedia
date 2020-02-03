@@ -1,0 +1,4 @@
+Required Installations
+pip install django_extensions
+pip install djangorestframework
+pip install Pillow

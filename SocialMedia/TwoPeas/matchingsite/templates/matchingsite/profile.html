@@ -1,0 +1,26 @@
+{% extends "matchingsite/base.html" %}
+{% load static %}
+
+{% block content %}
+   <div class='main'>
+   <table>
+   <tr>
+      <h4>Welcome to your profile page <strong>{{ username }}</strong>!</h4>
+      <br>
+      <img id='profile-img' height=150 width=150 src='/static/matchingsite/profile-image.jpg'></img>
+      <br>
+      <p><strong>Email:</strong> {{ email }} </p>
+      <p><strong>Gender:</strong> {{ gender }} </p>
+      <p><strong>Date of Birth:</strong> {{ dateOfBirth }} </p>
+      <p><strong>Age:</strong> {{ age }} </p>
+      <p><strong>Users you like:</strong></p>
+      <ul>
+         {% for member in likelist %}
+            <li>{{ member }} </li>
+         {% endfor %}
+      </ul>
+   </tr>
+   </table>
+   <br>
+   </div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "matchingsite/base.html" %}
+{% load static %}
+
+{% block content %}
+   <div class='main'>
+	  <div id="hob">
+      <h3>Your Selected Hobbies</h3>
+      <!-- The logged-in user's hobbies will be displayed in a list here. The hobbies are appended with JQuery/AJAX  -->
+      <ul id="hobbyList" class="list-group"></ul>
+	  </div>
+  	  <div id="hob">
+      <h3>Set and save new hobbies</h3>
+      <!-- Form for setting new hobbies  -->
+      <form id='hobby_form'>
+         {% csrf_token %}
+         {% for hobby in hobbies %}
+         <input id="{{ hobby.id }}" type="checkbox" name="hobby" value="{{ hobby.hobbyName }}">{{ hobby.hobbyName }}<br>
+         {% endfor %}
+         <input type='submit' value='Save'>
+      </form>
+	  </div>
+   </div>
+
+   <script>   
+      $(function (){
+         var $hobbyList = $('#hobbyList'); //Fetch ID of Unordered List
+      //=======================================================================================================================
+                        //GET Request
+      //=======================================================================================================================
+         $.ajax({
+            type: 'GET',
+            url: '/getUserHobbies',
+            success: function(data){
+                  console.log(data[0].hobbies);
+                  $.each(data[0].hobbies, function(i, hobbyID){
+                     console.log("success");
+                     $hobbyList.append('<li class="list-group-item">' + document.getElementById(hobbyID).value + '</li>');
+                  });
+            },
+            error: function(){
+               console.log("error");
+            }
+         });
+      });
+
+
+      //Click Add Product
+      $(document).on('submit', '#hobby_form', function(e) {
+            e.preventDefault(); //Prevents reloading page  
+            var checkedBoxes = getCheckedBoxes("hobby");   //Array with all the checkedboxes
+            var $hobbyList = $('#hobbyList'); //Store ID of Unordered List
+            var checkedBoxesValues = []; //Fill this array with the values of the checked boxes
+            for(var i = 0; i < checkedBoxes.length; i++){
+               checkedBoxesValues[i] = checkedBoxes[i].value;
+            }
+            var data = {
+               csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+               hobbies: checkedBoxesValues
+            } 
+            console.log(checkedBoxesValues)                       
+            console.log(data)
+      //=======================================================================================================================
+                              //POST Request
+      //=======================================================================================================================
+            $.ajax({
+                  type: 'POST',
+                  url: '/sethobbies/update',
+                  data: data,
+                  success: function(data){
+                     console.log("Success!");
+                     $(hobbyList).empty();
+                     $.each(data[0].hobbies, function(i, hobbyID){
+                        $hobbyList.append('<li class="list-group-item">' + document.getElementById(hobbyID).value + '</li>');
+                     });
+                  },
+                  error: function(jqxhr, status, exception) {
+                     alert('Exception:', exception);
+                  }
+            });
+      });
+
+      // Pass the checkbox name to the function
+      function getCheckedBoxes(chkboxName) {
+         var checkboxes = document.getElementsByName(chkboxName);
+         var checkboxesChecked = [];
+         // loop over them all
+         for (var i=0; i<checkboxes.length; i++) {
+            // And stick the checked ones onto an array...
+            if (checkboxes[i].checked) {
+               checkboxesChecked.push(checkboxes[i]);
+            }
+         }
+         // Return the array if it is non-empty, or null
+         return checkboxesChecked.length > 0 ? checkboxesChecked : null;
+      }
+                     
+   </script>
+{% endblock %}

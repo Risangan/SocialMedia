@@ -1,0 +1,172 @@
+{%extends "matchingsite/base.html" %}
+
+{%load staticfiles %}
+
+{% block content %}
+   <div class='main'>
+    <style>
+        table {
+            width:100%;
+        }
+    
+        th, td {
+            padding: 15px;
+        }
+    
+        th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+    </style>
+    <h2> Search </h2>
+    <!-- Search form  -->
+    <form id="search" method='GET' action="{% url 'search' %}" onsubmit="return validate()">
+        {% csrf_token %}
+		<div class="form-group">
+            <span class='field'>Gender </span>
+            <input type="radio" name="gender" value="M" checked> 
+            <span class='field'>Male</span>
+            <input type="radio" name="gender" value="F"> 
+            <span class='field'>Female</span>
+            <input type="radio" name="gender" value="any"> 
+            <span class='field'>Any</span>
+        </div>
+        <br><br>
+        <div class="form-group">
+            <span id='info'></span>
+            <span class='field'>Minimum age</span>
+            <input type="number" name="min_age" id="min_age" >
+            <span class='field'>Maximum age</span> 
+            <input type="number" name="max_age" id="max_age" >
+		</div>
+		<br><br>
+        <input type="submit" value="Submit">
+    </form>
+    <!-- This table will have the results  -->
+    <table id="results">
+        <tr>
+            <th>Profile Picture</th>
+            <th>Username</th>
+            <th>Date of Birth</th>
+            <th>Gender</th>
+            <th>Age</th>
+        </tr>
+    </table>
+    <script type="text/javascript">
+      //=======================================================================================================================
+                        //Form Validation 
+      //=======================================================================================================================
+      function validate(){
+	           var min = document.getElementById("min_age");
+	           var max = document.getElementById("max_age");
+	           
+	           if(min.value==""){
+	               window.alert("Minimum age cannot be empty");
+	               min.focus();
+	               return false;
+	           }
+	           
+	           if(max.value==""){
+	               window.alert("Maximum age cannot be empty");
+	               max.focus();
+	               return false;
+	           }
+	           
+	           if(max.value<min.value){
+	               window.alert("Minimum age must be less then maximum age");
+	               min.focus();
+	               return false;
+	           }
+	           
+	           if(max.value==min.value){
+	               window.alert("Minimum age and maximum age cannot be the same value");
+	               max.focus();
+	               return false
+	           }
+	           
+	           if(min.value<0){
+	               window.alert("Minimum age cannot be negative");
+	               min.focus();
+	               return false;
+	           }
+	           
+	           if(max.value<0){
+	               window.alert("Maximum age cannot be negative");
+	               max.focus();
+	               return false;
+	           }
+	           
+	           return true;
+	       }
+        
+
+      //=======================================================================================================================
+                        //POST Request
+      //=======================================================================================================================
+      $(document).on('submit', '#search', function(e) {
+         e.preventDefault(); //Prevents reloading page   
+         var $tableList = $('#results'); //Store ID of Table
+
+         //Get data from search form
+         var gender = $("input[name=gender]:checked").val()
+         var minAge = document.getElementById('min_age').value;
+         var maxAge = document.getElementById('max_age').value;
+
+         //Store search form data here
+         var data = {
+            csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+            gender: gender,
+            minAge: minAge,
+            maxAge: maxAge
+         } 
+         $.ajax({
+            type: 'POST',
+            data: data,
+            url: '/filtersearch/',
+            success: function(data){
+                //Remove all the rows first
+                $("#results tr").remove();
+
+                //Appending the Table Headers
+                $tableList.append('<tr id="ResultsHeader"></tr');
+                var $headerRow = $('#ResultsHeader'); //Fetch ID of New Row
+                $headerRow.append('<th>Profile Picture</th>');
+                $headerRow.append('<th>Username</th>');
+                $headerRow.append('<th>Date of Birth</th>');
+                $headerRow.append('<th>Gender</th>');
+                $headerRow.append('<th>Age</th>');
+
+               $.each(data, function(i, item){
+                  console.log("Success!");
+                  //Populate with new rows
+                  $tableList.append('<tr id="' + data[i].username + 'result"></tr');
+                  var $newResult = $('#' + data[i].username + 'result'); //Fetch ID of New Row
+                  $newResult.append('<td><img height=150 width=150 src=' + data[i].profileImage + '></img></td>');
+                  $newResult.append('<td>' + data[i].username + '</td>');
+                  $newResult.append('<td>' + data[i].dateOfBirth + '</td>');  
+                  $newResult.append('<td>' + data[i].gender + '</td>');     
+                  $newResult.append('<td>' + getAge(data[i].dateOfBirth) + '</td>');                          
+               });   
+            },
+            error: function(jqxhr, status, exception) {
+                     alert('Exception:', exception);
+            }
+         });
+      });
+      
+      //Function for returning age from date of birth
+      function getAge(DOB) {
+         var today = new Date();
+         var birthDate = new Date(DOB);
+         var age = today.getFullYear() - birthDate.getFullYear();
+         var m = today.getMonth() - birthDate.getMonth();
+         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age = age - 1;
+         }
+         return age;
+      }
+      
+     
+    </script>
+    </div>
+{% endblock %}
